@@ -17,7 +17,7 @@
 //At this stage of development complexity is N * lgN in size and computations, it can be made in 2N size
 //Data ordering is a little bit unclear
 //At this point it is a big memory leak, will be fixed soon
-static complex_polar_t * FFT_1D( complex_polar_t * f, complex_polar_t * buffer, int n){
+complex_polar_t * FFT_1D( complex_polar_t * f, complex_polar_t * buffer, int n){
 	
 	int N = pow(2, n);
 	if(buffer == NULL){
@@ -31,10 +31,10 @@ static complex_polar_t * FFT_1D( complex_polar_t * f, complex_polar_t * buffer, 
 	complex_polar_t * W = unity(0, 1);
 	
 	complex_polar_t * temp_polar = unity(0, 1);	
-	complex_cart_t  *temp_cart1= malloc(sizeof(complex_cart_t));
-	complex_cart_t  *temp_cart2= malloc(sizeof(complex_cart_t));
+	complex_cart_t  temp_cart1;
+	complex_cart_t  temp_cart2;
 
-	complex_cart_t * f_temp_cart = malloc(sizeof(complex_cart_t));
+	complex_cart_t f_temp_cart;
 	int i;
 	//Rearranging f with the N/2 even elems, then the N/2 odd elems
 	//(A_even)_{2k} corresponds to order_buffer[0, N/2-1]
@@ -48,35 +48,32 @@ static complex_polar_t * FFT_1D( complex_polar_t * f, complex_polar_t * buffer, 
 
 	complex_polar_t * Y_even;
 	complex_polar_t * Y_odd;
-	Y_even = FFT_1D(order_buffer, NULL, n-1);
-	Y_odd = FFT_1D(&(order_buffer[N/2]), NULL, n-1);
+	Y_even = FFT_1D(order_buffer, buffer, n-1);
+	Y_odd = FFT_1D(&(order_buffer[N/2]), &(buffer[N/2]), n-1);
 	
 	int j = 0;
 	for(j = 0; j< N/2; j++)
 	{
 		//sorting values part
 		mult_complex_polar(temp_polar, *W, Y_odd[ j]);	//temp_polar i.e W * Y_odd
-		polar_to_cart(temp_cart1, *temp_polar);	//temp_cart 1 i.e W*Y_odd
-		polar_to_cart(temp_cart2, Y_even[j]);	//temp_cart2 i.e. Y_even
+		polar_to_cart(&temp_cart1, *temp_polar);	//temp_cart 1 i.e W*Y_odd
+		polar_to_cart(&temp_cart2, Y_even[j]);	//temp_cart2 i.e. Y_even
 		
 		//Y(j) part
 
-		add_complex_cart(f_temp_cart, *temp_cart1, *temp_cart2);
-		cart_to_polar(&(buffer[j]), *f_temp_cart);
+		add_complex_cart(&f_temp_cart, temp_cart1, temp_cart2);
+		cart_to_polar(&(buffer[j]), f_temp_cart);
 			
 		//Y(j+N/2) part
 		
-		substract_complex_cart(f_temp_cart, *temp_cart2, *temp_cart1);
-		cart_to_polar(&(buffer[j + N/2]),*f_temp_cart );
+		substract_complex_cart(&f_temp_cart, temp_cart2, temp_cart1);
+		cart_to_polar(&(buffer[j + N/2]), f_temp_cart );
 		
 		//Updating phase factor
 		//mult_complex_polar(temp_polar, *W, *W_N);
 		W->phase += 2.0f * (4.0f * atan(1.0f)) / (double) N;	//Phase += 2*pi /N	
 		//W->power = temp_polar->power;	
 	}
-	free(temp_cart1);
-	free(temp_cart2);
-	free(f_temp_cart);
 
 	return buffer;
 }
@@ -88,7 +85,9 @@ complex_polar_t * FFT_1D_reverse( complex_polar_t * fourier_polar, int n){
 
 	complex_polar_t * f_polar;
 	f_polar = FFT_1D(fourier_polar, NULL, n);
-	
+	unitary_ft_polar( f_polar, pow(2, n));
+	reverse_buffer(f_polar, pow(2, n), sizeof(complex_polar_t));
+
 	return f_polar;
 }
 
@@ -101,9 +100,6 @@ complex_cart_t * FFT_1D_cart_to_cart( complex_cart_t * f, int n){
 	complex_polar_t * fft_polar = NULL;
 
 	fft_polar = FFT_1D(f_polar, NULL, n);
-	unitary_ft_polar( fft_polar, N);
-
-	rotate_buffer( fft_polar, N, sizeof(complex_polar_t));
 
 	free(f_polar);
 
@@ -181,13 +177,10 @@ complex_cart_t ** FFT_2D_reverse(complex_cart_t *** dst, complex_cart_t ** ft_ar
 		}
 		array_cols[i] = FFT_1D_reverse_cart_to_cart(ft_temp_row, n);
 	}	
-	complex_cart_t ** array_lines = NULL;
-	if(N != M)
-		return array_cols;
 
-	rotate_180( (void ***) dst, (void **)  array_cols, N, sizeof(complex_cart_t * ) );
+//	rotate_180( (void ***) dst, (void **)  array_cols, N, sizeof(complex_cart_t * ) );
 
-	return *dst;
+	return *dst = array_cols;
 }
 
 //unitary_ft_*() divide each coefficients inside *_array by 1/sqrt(N) in order to have a unitary fourier transform.

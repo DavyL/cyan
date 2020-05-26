@@ -58,7 +58,8 @@ int main( int argc, char** argv, char* envv ) {
 	//Y component is sent to the real part
 	complex_cart_t ** image_array = NULL;
 	image_array = image_to_cart(image, Y_to_cart); 
-	
+
+
 	complex_cart_t ** window_array = NULL;
 
 	array_2d_through_window_arb( (void ***) &window_array, (void **) image_array, image->rows, image->cols, sizeof(complex_cart_t),
@@ -127,28 +128,6 @@ int main( int argc, char** argv, char* envv ) {
 
 
 	
-	complex_polar_t test_arr[10];
-	for(i = 0; i <10; i++){
-		test_arr[i].power = 1.0f;
-		test_arr[i].phase = 0.0f;
-	}
-	complex_cart_t  * buf = NULL ;
-
-	sub_sampling_step_cart( &buf,(complex_cart_t *) *ft_array, image->cols, 8);
-
-	double * double_buf = NULL;
-	double_buf = (double *) malloc(  (image->cols / 8) * sizeof(double));
-	for(i = 0; i < image->cols/8; i++){
-		double_buf[i] = buf[i].real;
-	}
-	
-	double * window_buf = NULL;
-	double_array_through_window(&window_buf, double_buf, image->cols/8, window_triangular);
-	for(i = 0; i < (image->cols/8); i++){
-		fprintf(stdout, "original : %f\t windowed : %f\n"	, buf[i].real, window_buf[i] );
-	}
-
-	free((complex_cart_t *) buf);
 	image_free(image);
 	return 0 ;
 }

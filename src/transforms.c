@@ -27,7 +27,7 @@ image_t * FT_image_Y(image_t * image, complex_cart_t ** (*transform)(complex_car
 	//3. Convert 2D FFT in an image
 	image_t * image_ft = NULL;
 	
-	image_ft = convert_cart_to_image(ft_array, 512, 512);
+	image_ft = convert_cart_to_image(ft_array, image->cols, image->rows);
 
 	return image_ft;
 }
@@ -216,12 +216,29 @@ int transpose( void *** dst, void ** src, int N, size_t size ){
 
 void * rotate_buffer( void * buffer, int N, size_t size){
 	
-	complex_polar_t * temp = malloc(N/2 * size);
+	void * temp = malloc(N/2 * size);
 
 	memcpy(temp, buffer + (N/2 - 1) * size, N/2 * size);	//temp contains the second half of buffer
 	
 	memcpy(buffer + (N/2 -1) * size, buffer, N/2 * size);	//The second half of buffer now contains the previous first half
 	memcpy(buffer, temp, N/2 * size);	//And its first half is filled with temp
+
+	free(temp);
+
+	return buffer;
+}
+//reverse buffer maps buffer[k] ---> buffer[N-k]
+void * reverse_buffer( void * buffer, int N, size_t size){
+	void * temp = malloc(N/2 * size);
+	memcpy(temp, buffer, N/2 * size);
+
+	int i;
+	for( i=0; i< N/2; i++){
+		memcpy(buffer + i * size, buffer + (N - i - 1)*size, size);	//Shouldn't we have a -1 in here ? 
+									//I would suspect to have an out of bound here 
+									//but it seems to work this way...
+		memcpy( buffer + (N - i - 1) * size, temp + i * size, size);
+	}
 
 	free(temp);
 

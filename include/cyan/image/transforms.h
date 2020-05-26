@@ -4,6 +4,7 @@
 #include <cyan/image/complex.h>
 
 void * rotate_buffer( void * buffer, int N, size_t );
+void * reverse_buffer( void * buffer, int N, size_t );
 int transpose( void *** dst, void ** src, int N, size_t size );
 int rotate_180( void *** dst, void ** src, int N, size_t size);
 
