@@ -83,6 +83,7 @@ complex_polar_t * FFT_1D( complex_polar_t * f, complex_polar_t * buffer, int n){
 //
 complex_polar_t * FFT_1D_reverse( complex_polar_t * fourier_polar, int n){
 
+//	rotate_buffer(fourier_polar, pow(2, n), sizeof(complex_polar_t));
 	complex_polar_t * f_polar;
 	f_polar = FFT_1D(fourier_polar, NULL, n);
 	unitary_ft_polar( f_polar, pow(2, n));
@@ -96,11 +97,14 @@ complex_cart_t * FFT_1D_cart_to_cart( complex_cart_t * f, int n){
 	int N = pow(2, n);
 		
 	f_polar = cart_array_to_polar(f, N);
-	
+
+	//rotate_buffer(f_polar, N, sizeof(complex_polar_t));	
 	complex_polar_t * fft_polar = NULL;
 
 	fft_polar = FFT_1D(f_polar, NULL, n);
-
+	unitary_ft_polar( fft_polar, N);
+//	rotate_buffer(fft_polar, N, sizeof(complex_polar_t));
+	
 	free(f_polar);
 
 	complex_cart_t * fft_cart = NULL;
@@ -120,10 +124,11 @@ complex_cart_t * FFT_1D_reverse_cart_to_cart( complex_cart_t * fft, int n){
 	
 	complex_polar_t * f_polar = NULL;
 
-	rotate_buffer(fft_polar, N, sizeof(complex_polar_t));
+//	rotate_buffer(fft_polar, N, sizeof(complex_polar_t));
 	f_polar = FFT_1D_reverse(fft_polar, n);
-	unitary_ft_polar(f_polar, N);
+//	unitary_ft_polar(f_polar, N);
 
+	rotate_buffer(fft_polar, N, sizeof(complex_polar_t));
 	free(fft_polar);
 
 	complex_cart_t * f_cart = NULL;
