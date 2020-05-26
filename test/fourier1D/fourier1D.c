@@ -41,6 +41,8 @@ int main( int argc, char** argv, char* envv ) {
 
 	complex_cart_t * reverse_cart = NULL;
 	reverse_cart = FFT_1D_reverse_cart_to_cart(fft_cart, n);
+	reverse_buffer(reverse_cart, N, sizeof(complex_cart_t));
+
 	for(i = 0; i < N; i++){
 		fprintf(stdout, "array reverse : real : %f, im : %f \n", reverse_cart[i].real, reverse_cart[i].im);
 	}
