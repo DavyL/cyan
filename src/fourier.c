@@ -126,9 +126,9 @@ complex_cart_t * FFT_1D_reverse_cart_to_cart( complex_cart_t * fft, int n){
 
 //	rotate_buffer(fft_polar, N, sizeof(complex_polar_t));
 	f_polar = FFT_1D_reverse(fft_polar, n);
-//	unitary_ft_polar(f_polar, N);
 
 	rotate_buffer(fft_polar, N, sizeof(complex_polar_t));
+	//reverse_buffer(fft_polar, N, sizeof(complex_polar_t));
 	free(fft_polar);
 
 	complex_cart_t * f_cart = NULL;
