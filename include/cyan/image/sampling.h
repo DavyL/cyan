@@ -28,10 +28,13 @@ int min_index_in_double_array(double * array, int len);
 double max_val_in_double_array(double * array, int len);
 double min_val_in_double_array(double * array, int len);
 
+int pw_mult_polar_array( complex_polar_t ** dst, complex_polar_t * x, complex_polar_t * y, int len);
+int double_array_to_polar_power_array(complex_polar_t ** dst, double * src, int len);
 int mult_double_array(double * array, int len, double mult);
 int add_double_array(double * array, int len, double add);
 int normalize_and_scale_double_array(double * array, int len, double scale);
 int double_array_to_int_array(int ** dst, double * src, int len);
+int double_array_to_polar_array( complex_polar_t ** dst, double * src, int len);
 
 int array_2d_through_window_arb( void *** dst, void ** src, int N, int M, size_t elem_size, 
 	       			double (*window)(double, int), int (*mult)(void *, double));

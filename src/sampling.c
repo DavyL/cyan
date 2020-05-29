@@ -199,6 +199,46 @@ int normalize_and_scale_double_array(double * array, int len, double scale){
 
 	return mult_double_array(array, len, normalizer);	//Maps all values to [0, scale]
 }
+//pw_mult_polar_array: pointwise multiplication of two polar arrays
+int pw_mult_polar_array( complex_polar_t ** dst, complex_polar_t * x, complex_polar_t * y, int len){
+	if(dst == NULL || x == NULL || y == NULL){
+		fprintf(stdout, "pw_mult_polar_array: A NULL was given as an argument.\n");
+		return -1;
+	}
+	if(*dst == NULL){
+		*dst = malloc(len * sizeof(complex_polar_t));
+		if(*dst == NULL){
+			fprintf(stderr, "pw_mult_polar_array: couldn't allocate memory, len : %d.\n", len);
+			return -1;
+		}
+	}
+	int i = 0;
+	for(i = 0; i < len; i++){
+		(*dst)[i].power = x[i].power * y[i].power;
+		(*dst)[i].phase = x[i].phase + y[i].phase;
+	}
+	return len;
+}
+int double_array_to_polar_power_array(complex_polar_t ** dst, double * src, int len){
+	if(dst == NULL || src == NULL){
+		fprintf(stdout, "double_array_to_polar_array : A NULL was given as an arguments.\n");
+		return -1;
+	}
+	if(*dst == NULL){
+		*dst = malloc(len * sizeof(complex_polar_t));
+		if(*dst == NULL){
+			fprintf(stderr, "double_array_to_polar_power_array : couldn't allocate memory : len : %d.\n", len);
+			return -1;
+		}
+	}
+	int i = 0;
+	for( i = 0; i < len; i++){
+		(*dst)[i].power = src[i];
+		(*dst)[i].phase = 0.0f;
+	}
+	return 0;
+}	
+//mult_double_array: multiplication of an array by a fixed double
 int mult_double_array(double * array, int len, double mult){
 	if( array == NULL){
 		fprintf(stdout, "normalize_double_array : array is NULL. \n");
