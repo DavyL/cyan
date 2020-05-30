@@ -250,7 +250,7 @@ int image_set_color_to_coordinates(image_t * img, color_t color, int * y_coord, 
 
 	int i = 0;
 	int temp_y_coord;
-	for( i = 0; i < img->cols; i+= step){
+	for( i = 0; i < img->cols - step; i+= step){
 		temp_y_coord = y_coord[i];
 		//following conditions to ensure values are in range
 		if(temp_y_coord > img->rows){
@@ -258,9 +258,9 @@ int image_set_color_to_coordinates(image_t * img, color_t color, int * y_coord, 
 		}else if(temp_y_coord < 0){
 			temp_y_coord = 0;
 		}
-		img->X[ img->cols*(img->rows - temp_y_coord) + i ] = color.X;
-		img->Y[ img->cols*(img->rows - temp_y_coord) + i ] = color.Y;
-		img->Z[ img->cols*(img->rows - temp_y_coord) + i ] = color.Z;
+		img->X[ img->cols*(img->rows - temp_y_coord - 1) + i ] = color.X;
+		img->Y[ img->cols*(img->rows - temp_y_coord - 1) + i ] = color.Y;
+		img->Z[ img->cols*(img->rows - temp_y_coord - 1) + i ] = color.Z;
 	}
 	return i;
 }
