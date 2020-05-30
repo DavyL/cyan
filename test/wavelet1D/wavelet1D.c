@@ -11,96 +11,53 @@
 
 #include <cyan_fileio/save_ppm.h>
 
+int D4_wavelet_forward( double ** dst_scale, double ** dst_wavelet, double * src, int len);
+int D4_wavelet_backward( double ** dst, double * src_scale, double * src_wavelet, int len);
+int double_threshold( double * array, double T, int len);
+int l2_distance(double * dst, double * x, double * y, int len);
 int convol_loc( double * a, double * array, double * h, int i, int filter_len, int len );
 
 int main( int argc, char** argv, char* envv ) {
 
-	int len = 256;
+	int len = 512;
 	int i = 0;
 	int scale = 255;
 	double array[len];
-	complex_polar_t polar_array[len];
-	
-	//Loading Daubechies4 low pass filter
-	const int filter_length = 4;
-	double h[] = { 0.482962913f, 0.836516303f, 0.224143868f, -0.129409522f}; 
-	//Computing the associated high pass filter
-	//TODO : implement general computation of g from h
-	double g[] = { -0.12940952f, -0.22414387f, 0.8365163f, -0.48296291f};
 
-	mult_double_array(h, filter_length, 1.0f);
-	mult_double_array(g, filter_length, 1.0f);
 	for(i=0; i < len; i++){
-		//array[i] = cos( 2 * M_PI * (double) i / (double) len ) + 
-		array[i] =  3.0f * (double) i / (double) len;
-		polar_array[i].phase = 0.0f;
-		polar_array[i].power = array[i];
+		array[i] = cos( 20*2 * M_PI * (double) i / (double) len ); 
 	}
 	
-	double a[len];
-	double d[len];
-	double temp = 0.0f;
-	for(i = 0; i < len; i++){
-		convol_loc( &temp, array, h, i, filter_length, len ); 
-		a[i] = temp;
-		fprintf(stdout, "a %d : %f\n", i, temp);
-		convol_loc( &temp, array, g, i, filter_length, len ); 
-		d[i] = temp;
-	}
-	double padded_a[len/2];
-	double padded_d[len/2];
-	for(i=0; i < len/2; i++){
-		padded_a[i] = a[2*i];
-		//padded_a[2*i + 1] = 0.0f;
-	
-		padded_d[i] = d[2*i];
-		//padded_d[2*i + 1] = 0.0f;
-	}
-	//reverse_buffer(h, filter_length, sizeof(double));
-	//reverse_buffer(g, filter_length, sizeof(double));
-	double reverse_h[filter_length]; 
-	reverse_h[0] = h[2];
-	reverse_h[1] = g[2]; 
-	reverse_h[2] = h[0];
-	reverse_h[3] = g[0];
-	double reverse_g[filter_length];
-	reverse_g[0] = h[3];
-	reverse_g[1] = g[3]; 
-	reverse_g[2] = h[1];
-	reverse_g[3] = g[1];
-	
-	double reversed_array[len];
-	double detail_temp = 0;
-	double harsh_temp = 0;
-	int j = 0;
-	reversed_array[j++] = a[len - 1] * reverse_h[0] + d[len - 1] * reverse_h[1] + a[0]*reverse_h[2] + d[0]*reverse_h[3];
-	reversed_array[j++] = a[len - 1] * reverse_g[0] + d[len - 1] * reverse_g[1] + a[0]*reverse_g[2] + d[0]*reverse_g[3];
-	for(i = 0; i < len/2 ; i++){
-		reversed_array[j++] = a[2*i] * reverse_h[0] + d[2*i] * reverse_h[1] + a[2*i+2]*reverse_h[2] + d[2*i + 2]*reverse_h[3];
-		reversed_array[j++] = a[2*i] * reverse_g[0] + d[2*i] * reverse_g[1] + a[2*i+2]*reverse_g[2] + d[2*i + 2]*reverse_g[3];
+	//Wavelet coefs
+	double * scale_array = NULL;
+	double * wavelet_array = NULL;
+	D4_wavelet_forward(&scale_array, &wavelet_array, array, len);
 
-	}
+
+	//Non-linear approx
+	double T = 0.2f;
+	double_threshold(scale_array, T, len/2);
+	double_threshold(wavelet_array, T, len/2);
+
+	double * reversed_array = NULL;
+	D4_wavelet_backward(&reversed_array, scale_array, wavelet_array, len/2);
+
+	free(scale_array);
+	free(wavelet_array);
 
 	double L2_diff = 0;
-	for( i = 0; i < len; i++){
-		fprintf(stdout, " array : %f, \t reversed array : %f\n", array[i], reversed_array[i]);
-		L2_diff += fabs( array[i]*array[i] - reversed_array[i]*reversed_array[i] );
-	}
+	l2_distance(&L2_diff, array, reversed_array, len);
 	fprintf(stdout, "L2 difference of array and reversed array is : %f.\n", L2_diff);
 
 	int * int_array = NULL;
 	int * int_reversed_array = NULL;
-	int * int_a	= NULL;
-	int * int_d	= NULL;
 
 	normalize_and_scale_double_array(array, len, (double) scale);
-	normalize_and_scale_double_array(reversed_array, len, (double) scale);
-	normalize_and_scale_double_array(a, len/2, (double) scale);
-	normalize_and_scale_double_array(d, len/2, (double) scale);
 	double_array_to_int_array( &int_array, array, len);
+
+	normalize_and_scale_double_array(reversed_array, len, (double) scale);	
 	double_array_to_int_array( &int_reversed_array, reversed_array, len);
-	double_array_to_int_array( &int_a, a, len/2);
-	double_array_to_int_array( &int_d, d, len/2);
+	free(reversed_array);
 
 	image_t * image = image_new_empty(len, scale);
 	
@@ -108,30 +65,135 @@ int main( int argc, char** argv, char* envv ) {
 	color_assign( &color, 1.0f, 1.0f, 1.0f, 0);
 
 	image_set_color_to_coordinates(image, color, int_array, 1);
-	
+	free(int_array);
+
 	color_assign( &color, 0.7f, 0.3f, 0.8f, 0);
 
 	image_set_color_to_coordinates(image, color, int_reversed_array, 1);
-	
-	color_assign( &color, 0.5f, 1.0f, 1.0f, 0);
-	//image_set_color_to_coordinates(image, color, int_a, 1);
-	
-	color_assign( &color, 1.0f, 1.0f, 0.5f, 0);
-	//image_set_color_to_coordinates(image, color, int_d, 1);
-
+	free(int_reversed_array);
 
 	image_save_ppm(image, "image.ppm");
 	
-//	image_free(image);
+	image_free(image);
 
 	return 0;
 }
-		
+
+//Computes the Daubechies 4 forward wavelet transform with as in input, src, a double array of length len
+//Output is stored in dst_*, which are arrays of length len / 2
+int D4_wavelet_forward( double ** dst_scale, double ** dst_wavelet, double * src, int len){
+
+	if(dst_scale == NULL || dst_wavelet == NULL || src == NULL){
+		fprintf(stderr, "Error : D4_wavelet_forward() A NULL argument was passed.\n");
+		return -1;
+	}
+	if(len % 2){
+		fprintf(stderr, "Error : D4_wavelet_forward() len is an odd number.\n");
+		return -1;
+	}
+	if(*dst_scale == NULL){
+		*dst_scale = malloc((len/2) * sizeof(double));
+	}
+	if(*dst_wavelet == NULL){
+		*dst_wavelet = malloc((len/2) * sizeof(double));
+	}
+	if(*dst_wavelet == NULL || *dst_scale == NULL){
+		fprintf(stderr, "Error: D4_wavelet_forward() Error allocating dst pointers.\n");
+		return -1;
+	}
+
+	//Loading Daubechies4 low pass filter (scaling function)
+	const int filter_length = 4;
+	double h[] = { 0.482962913f, 0.836516303f, 0.224143868f, -0.129409522f}; 
+	
+	//Loading the associated high pass filter (wavelet function)
+	//TODO : implement general computation of g from h
+	double g[] = { -0.12940952f, -0.22414387f, 0.8365163f, -0.48296291f};
+
+	int i;	
+	
+	double temp = 0.0f;
+	//Doing finite support convolutions w.r.t the associated filter
+	for(i = 0; i < len / 2 ; i++){
+		convol_loc( &temp, src, h, 2*i, filter_length, len ); 
+		(*dst_scale)[i] = temp;
+		convol_loc( &temp, src, g, 2*i, filter_length, len ); 
+		(*dst_wavelet)[i] = temp;
+	}
+
+	return 0;
+}
+
+//Sets to 0 every value which is absolutely smaller than T
+//Returns -1 if there is an error, otherwise it returns the number of values kept in the array
+int double_threshold( double * array, double T, int len){
+	if(array == NULL){
+		fprintf(stderr, "Invalid argument : double_threshold() arrray is a NULL pointer.\n");
+		return -1;
+	}
+	int i = 0;
+	for( i = len - 1; i >= 0; i--){
+		if(fabs(array[i]) < T){
+			array[i] = 0.0f;
+			len--;
+		}
+	}
+	return len;
+}
+//Takes as an input scale and wavelet arrays given by forward Daubechies 4 wavelet transform of length len
+//stores in dst the resulting backward transform of length 2 * len	
+int D4_wavelet_backward( double ** dst, double * src_scale, double * src_wavelet, int len){
+	if(dst == NULL || src_scale == NULL || src_wavelet == NULL){
+		fprintf(stderr, "Invalid argument : D4_wavelet_backward() One of the arguments is a NULL pointer.\n");
+		return -1;
+	}
+	if(len < 2){
+		fprintf(stderr, "Invalid argument : D4_wavelet_backward() len is than 2.\n");
+		return -1;
+	}
+	if(*dst == NULL){
+		*dst = malloc(2 * len * sizeof(double));
+		if(*dst == NULL){
+			fprintf(stderr, "Error: D4_wavelet_backward : Couldn't allocate memory.\n");
+			return -1;
+		}
+	}
+	double conj_h[] = { 0.224143868f, 0.8365163f, 0.482962913f, -0.12940952f };
+	double conj_g[] = {  -0.129409522f, -0.48296291f, 0.836516303f, -0.22414387f };
+
+	int i = 0;
+	int j = 0;
+	(*dst)[j++] = src_scale[len - 1] * conj_h[0] + src_wavelet[len - 1] * conj_h[1] + src_scale[0]*conj_h[2] + src_wavelet[0]*conj_h[3];
+	(*dst)[j++] = src_scale[len-1] * conj_g[0] + src_wavelet[len - 1] * conj_g[1] + src_scale[0]*conj_g[2] + src_wavelet[0]*conj_g[3];
+	for(i = 0; i < len - 1; i++){
+		(*dst)[j++] = src_scale[i] * conj_h[0] + src_wavelet[i] * conj_h[1] + src_scale[i+1]*conj_h[2] + src_wavelet[ i + 1]*conj_h[3];
+		(*dst)[j++] = src_scale[i] * conj_g[0] + src_wavelet[i] * conj_g[1] + src_scale[i+1]*conj_g[2] + src_wavelet[ i + 1]*conj_g[3];
+	}
+
+	return 0;
+}
+//Compute the l2 distance of two arrays
+int l2_distance(double * dst, double * x, double * y, int len){
+	if(dst == NULL || x == NULL || y == NULL){
+		fprintf(stderr, "Invalid argument: l2_distance() a NULL pointer was passed as an argument.\n");
+		return -1;
+	}
+	
+	*dst = 0.0f;
+	int i = 0;	
+	for(i = 0; i < len; i++)
+		*dst += fabs(x[i]*x[i] - y[i]*y[i]);
+	*dst = sqrt(*dst);
+	return 0;
+
+
+}
+	
 //Stores in a the convolution of array (of length n) 
 //at step i with a filter h of length filter_len
 int convol_loc( double * a, double * array, double * h, int i, int filter_len, int len ){
 	if( a == NULL || array == NULL || h == NULL){
-		fprintf(stderr, "ERR : wavelet1D : convol() : a NULL pointer was passed as an argument.\n");
+		fprintf(stderr, "ERR : wavelet1D : convol_loc() : a NULL pointer was passed as an argument.\n");
 		return -1;
 	}
 	*a = 0.0f;
