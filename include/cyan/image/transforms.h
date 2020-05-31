@@ -1,6 +1,7 @@
 #ifndef TRANSFORMS_H
 #define TRANSFORMS_H
 
+#include <cyan/image/image.h>
 #include <cyan/image/complex.h>
 
 void * rotate_buffer( void * buffer, int N, size_t );
@@ -33,5 +34,11 @@ image_t * color2grey(image_t *);
 
 float norm_2_sq_4_f( float, float , float , float );
 float dot_product_4_f(	float, float, float, float, float, float, float, float );
+
+int double_threshold( double * array, double T, int len);
+int l2_distance(double * dst, double * x, double * y, int len);
+
+int convol_loc( double * a, double * array, double * h, int i, int filter_len, int len );
+
 
 #endif

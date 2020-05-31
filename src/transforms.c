@@ -286,4 +286,59 @@ float dot_product_4_f(	float x1, float x2, float x3, float x4,
 float norm_2_sq_4_f( float x, float y, float z, float t){
 	return dot_product_4_f( x, y, z, t, x, y, z, t) ;
 }
+//Sets to 0 every value which is absolutely smaller than T
+//Returns -1 if there is an error, otherwise it returns the number of values kept in the array
+int double_threshold( double * array, double T, int len){
+	if(array == NULL){
+		fprintf(stderr, "Invalid argument : double_threshold() arrray is a NULL pointer.\n");
+		return -1;
+	}
+	int i = 0;
+	for( i = len - 1; i >= 0; i--){
+		if(fabs(array[i]) < T){
+			array[i] = 0.0f;
+			len--;
+		}
+	}
+	return len;
+}
+//Compute the l2 distance of two arrays
+int l2_distance(double * dst, double * x, double * y, int len){
+	if(dst == NULL || x == NULL || y == NULL){
+		fprintf(stderr, "Invalid argument: l2_distance() a NULL pointer was passed as an argument.\n");
+		return -1;
+	}
+	
+	*dst = 0.0f;
+	int i = 0;	
+	for(i = 0; i < len; i++)
+		*dst += fabs(x[i]*x[i] - y[i]*y[i]);
+	*dst = sqrt(*dst);
+	return 0;
+
+
+}
+//Stores in a the convolution of array (of length n) 
+//at step i with a filter h of length filter_len
+int convol_loc( double * a, double * array, double * h, int i, int filter_len, int len ){
+	if( a == NULL || array == NULL || h == NULL){
+		fprintf(stderr, "ERR : wavelet1D : convol_loc() : a NULL pointer was passed as an argument.\n");
+		return -1;
+	}
+	*a = 0.0f;
+
+	int k = 0;
+	int j = 0;
+	if(filter_len % 2 != 0)
+		filter_len++;
+
+	for( k = ( 0 > i - filter_len / 2 ? 0 : i) ; k < ( len < i + filter_len ? len : i + filter_len); k++, j++){
+		*a += array[k]*h[j];
+	}
+	
+	return 0;
+
+
+}
+
 
