@@ -38,7 +38,7 @@ float dot_product_4_f(	float, float, float, float, float, float, float, float );
 int double_threshold( double * array, double T, int len);
 int l2_distance(double * dst, double * x, double * y, int len);
 
-int convol_loc( double * a, double * array, double * h, int i, int filter_len, int len );
+int convol_loc( double * a, double * array, double * h, int i, int filter_len, int len, int offset );
 
 
 #endif

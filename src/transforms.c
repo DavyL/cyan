@@ -320,22 +320,21 @@ int l2_distance(double * dst, double * x, double * y, int len){
 }
 //Stores in a the convolution of array (of length n) 
 //at step i with a filter h of length filter_len
-int convol_loc( double * a, double * array, double * h, int i, int filter_len, int len ){
+int convol_loc( double * a, double * array, double * h, int i, int filter_len, int len, int offset ){
 	if( a == NULL || array == NULL || h == NULL){
 		fprintf(stderr, "ERR : wavelet1D : convol_loc() : a NULL pointer was passed as an argument.\n");
 		return -1;
 	}
 	*a = 0.0f;
 
-	int k = 0;
+	int k = offset;
 	int j = 0;
 	if(filter_len % 2 != 0)
 		filter_len++;
 
-	for( k = ( 0 > i - filter_len / 2 ? 0 : i) ; k < ( len < i + filter_len ? len : i + filter_len); k++, j++){
+	for( k = ( 0 > i - filter_len / 2 ? 0 : i) ; k < ( len < i + filter_len ? len : i + filter_len); k+=offset, j++){
 		*a += array[k]*h[j];
 	}
-	
 	return 0;
 
 

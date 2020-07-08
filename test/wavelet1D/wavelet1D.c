@@ -17,6 +17,7 @@ int main( int argc, char** argv, char* envv ) {
 	int len = 512;
 	int i = 0;
 	int scale = 255;
+	int offset = 1;
 	double array[len];
 
 	for(i=0; i < len; i++){
@@ -26,16 +27,16 @@ int main( int argc, char** argv, char* envv ) {
 	//Wavelet coefs
 	double * scale_array = NULL;
 	double * wavelet_array = NULL;
-	D4_wavelet_forward(&scale_array, &wavelet_array, array, len);
+	D4_wavelet_forward(&scale_array, &wavelet_array, array, len, offset);
 
 
 	//Non-linear approx
-	double T = 0.2f;
+	double T = 0.2;
 	double_threshold(scale_array, T, len/2);
 	double_threshold(wavelet_array, T, len/2);
 
 	double * reversed_array = NULL;
-	D4_wavelet_backward(&reversed_array, scale_array, wavelet_array, len/2);
+	D4_wavelet_backward(&reversed_array, scale_array, wavelet_array, len/2, offset);
 
 	free(scale_array);
 	free(wavelet_array);
