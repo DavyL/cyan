@@ -59,7 +59,7 @@ void image_free(image_t * img) {
 	free(img);
 }
 
-
+//WARNING + TODO : memory mapping of image->X, Y, Z, is done the wrong way
 //Concatenates two image horizontally
 //img_left and img_right do not need to have the same number of rows
 int image_cat_hor( image_t ** dst, image_t * img_left, image_t * img_right ){

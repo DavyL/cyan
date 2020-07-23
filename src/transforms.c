@@ -304,40 +304,157 @@ int double_threshold( double * array, double T, int len){
 }
 //Compute the l2 distance of two arrays
 int l2_distance(double * dst, double * x, double * y, int len){
-	if(dst == NULL || x == NULL || y == NULL){
+	if(dst == NULL || x == NULL){
 		fprintf(stderr, "Invalid argument: l2_distance() a NULL pointer was passed as an argument.\n");
 		return -1;
 	}
 	
 	*dst = 0.0f;
 	int i = 0;	
-	for(i = 0; i < len; i++)
-		*dst += fabs(x[i]*x[i] - y[i]*y[i]);
+	if( y != NULL){
+		for(i = 0; i < len; i++){
+			*dst += fabs(x[i]*x[i] - y[i]*y[i]);
+		}
+	}
+	else{
+		for(i = 0; i < len; i++){
+			*dst += x[i]*x[i];
+		}
+	}
 	*dst = sqrt(*dst);
 	return 0;
 
 
 }
+
+//convol_loc is going to be deprecated in a few commits
 //Stores in a the convolution of array (of length n) 
 //at step i with a filter h of length filter_len
 int convol_loc( double * a, double * array, double * h, int i, int filter_len, int len, int offset ){
 	if( a == NULL || array == NULL || h == NULL){
-		fprintf(stderr, "ERR : wavelet1D : convol_loc() : a NULL pointer was passed as an argument.\n");
+		fprintf(stderr, "ERR : transforms.c : convol_loc() : a NULL pointer was passed as an argument.\n");
 		return -1;
 	}
-	*a = 0.0f;
-
-	int k = offset;
+	if(i < 0 || i >= len){
+		fprintf(stderr, "ERR : transforms.c : convol_loc() : an out of bound value is passed as an argument for i : %d.\n", i);
+		return -1;
+	}
+	int first_elem = 0;
 	int j = 0;
 	if(filter_len % 2 != 0)
 		filter_len++;
-
-	for( k = ( 0 > i - filter_len / 2 ? 0 : i) ; k < ( len < i + filter_len ? len : i + filter_len); k+=offset, j++){
-		*a += array[k]*h[j];
+	
+	if( i - filter_len /2 >= 0){
+		first_elem = i - filter_len / 2;
 	}
+	else{
+		first_elem = 0;
+	}
+
+	for( j = 0, *a = 0.0; j < filter_len; j++){
+		if( first_elem + offset * j < len){
+			*a =*a + (*(array + first_elem + offset*j )) * (h[j]);
+		}
+		else{
+
+			*a =*a + (*(array + first_elem + offset*(filter_len - j) )) * (h[j]);
+			//Out of bounds values are set to 0
+			//Modify here to change boundaries behaviour
+//			fprintf(stdout, "convol_loc() : Adding a zero value.\n");
+		}
+}
+
+	/*for( k = ( 0 > i - filter_len / 2 ? 0 : i - filter_len / 2) ; k < ( (len < i + offset*k + filter_len/2) ? len : i + filter_len/2 + offset*k); j++, k++)
+	  *a += *( array + i + offset*k)*h[j];
+	*/
+//	if(i < 250)
+		//fprintf(stdout, "i : %d : %f\n", i, *a);
 	return 0;
 
 
+}
+
+//Stores in a the convolution of 1D array (of length n) (which is a real value, i.e. a double)
+//at step step with a filter h of length filter_len
+//Warning:  a is not initialized
+int convol_loc_1D( double * a, double * array, double * h, int step, int filter_len, int len){
+	if( a == NULL || array == NULL || h == NULL){
+		fprintf(stderr, "ERR : transforms.c : convol_loc_1D() : a NULL pointer was passed as an argument.\n");
+		return -1;
+	}
+	if(step < 0 || step >= len){
+		fprintf(stderr, "ERR : transforms.c : convol_loc_1D() : an out of bound value is passed as an argument for i : %d.\n", step);
+		return -1;
+	}
+
+	if(filter_len % 2 != 0){		//TODO : Implement this later
+		fprintf(stderr, "ERR : transforms.c : convol_loc_1D() : filter_len is an odd value.\n");
+		return -1;
+	}
+		
+	//Ensuring the first element is in range
+	int first_elem = 0;	
+	if( step - filter_len /2 >= 0){
+		first_elem = step - filter_len / 2;
+	}
+	
+	
+	int j = 0;
+	for( j = 0; j < filter_len; j++){
+		if( first_elem + j < len){
+			//*a =*a + (*(array + first_elem + j )) * (h[j]);
+			*a += array[ first_elem + j] * (h[j]);
+		}
+		else{
+
+			*a =*a + (*(array + first_elem + filter_len - j )) * (h[j]);	
+			//Making symmetry on the boundary
+			//Modify here to change boundaries behaviour
+		}
+	}
+	
+	return 0;
+}
+//Performs the convolution on columns from array and stores the result as a double in a
+//The input array is of size len_row*len_col
+//Hence the offset between each element on which to perform the convolution is len_col
+//Location input is (row, column) the position of the first elem
+int convol_loc_1D_columns( double * a, double * array, double * h, int row, int column, int filter_len, int len_row, int len_col){
+	if( a == NULL || array == NULL || h == NULL){
+		fprintf(stderr, "ERR : transforms.c : convol_loc_1D_columns() : a NULL pointer was passed as an argument.\n");
+		return -1;
+	}
+	if(row < 0 || row >= len_row){
+		fprintf(stderr, "ERR : transforms.c : convol_loc_1D_columns() : an out of bound value is passed as an argument for i : %d.\n", row);
+		return -1;
+	}
+
+	if(filter_len % 2 != 0){		//TODO : Implement this later
+		fprintf(stderr, "ERR : transforms.c : convol_loc_1D() : filter_len is an odd value.\n");
+		return -1;
+	}
+		
+	//Ensuring the first element is in range
+	int first_elem = 0;	
+	if( row - filter_len /2 >= 0){
+		first_elem = row - filter_len / 2;
+	}
+	
+	
+	int j = 0;
+	for( j = 0; j < filter_len; j++){
+		if( first_elem + j < len_row){
+			*a += array[ (first_elem + j)*len_col + column] * (h[j]);
+		}
+		else{
+
+			*a =*a + array[ (first_elem + filter_len - j)*len_col + column] * (h[j]);	
+			//Making symmetry on the boundary
+			//Modify here to change boundaries behaviour
+		}
+	}
+	
+	return 0;
 }
 
 

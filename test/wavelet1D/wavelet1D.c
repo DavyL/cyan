@@ -29,6 +29,15 @@ int main( int argc, char** argv, char* envv ) {
 	double * wavelet_array = NULL;
 	D4_wavelet_forward(&scale_array, &wavelet_array, array, len, offset);
 
+	double norm_arr = 0;
+	double norm_wav = 0;
+	double norm_sca = 0;
+	l2_distance(&norm_arr, array, NULL, len);
+	l2_distance(&norm_wav, wavelet_array, NULL, len/2);
+	l2_distance(&norm_sca, scale_array, NULL, len/2);
+	fprintf(stdout, "array norm : %f\t, scale norm : %f\t, wavelet norm : %f\n", norm_arr, norm_sca, norm_wav); 
+
+
 
 	//Non-linear approx
 	double T = 0.2;
@@ -38,24 +47,33 @@ int main( int argc, char** argv, char* envv ) {
 	double * reversed_array = NULL;
 	D4_wavelet_backward(&reversed_array, scale_array, wavelet_array, len/2, offset);
 
-	free(scale_array);
-	free(wavelet_array);
-
 	double L2_diff = 0;
+	double norm_rev = 0;
+	l2_distance(&norm_rev, reversed_array, NULL, len);
+	fprintf(stdout, "reversed array norm : %f\n", norm_rev);
 	l2_distance(&L2_diff, array, reversed_array, len);
 	fprintf(stdout, "L2 difference of array and reversed array is : %f.\n", L2_diff);
 
 	int * int_array = NULL;
 	int * int_reversed_array = NULL;
+	int * int_scale_array = NULL;
+	int * int_wavelet_array = NULL;
 
 	normalize_and_scale_double_array(array, len, (double) scale);
 	double_array_to_int_array( &int_array, array, len);
 
 	normalize_and_scale_double_array(reversed_array, len, (double) scale);	
 	double_array_to_int_array( &int_reversed_array, reversed_array, len);
-	free(reversed_array);
+
+	normalize_and_scale_double_array( scale_array, len/2, (double) scale);
+	double_array_to_int_array(&int_scale_array, scale_array, len/2);
+
+	normalize_and_scale_double_array( wavelet_array, len/2, (double) scale);
+	double_array_to_int_array(&int_wavelet_array, wavelet_array, len/2);
 
 	image_t * image = image_new_empty(len, scale);
+	image_t * image_wavelet = image_new_empty(len/2, scale);
+	image_t * image_scale = image_new_empty(len/2, scale);
 	
 	color_t color;
 	color_assign( &color, 1.0f, 1.0f, 1.0f, 0);
@@ -67,6 +85,14 @@ int main( int argc, char** argv, char* envv ) {
 
 	image_set_color_to_coordinates(image, color, int_reversed_array, 1);
 	free(int_reversed_array);
+
+	image_set_color_to_coordinates(image_wavelet, color, int_wavelet_array, 1);
+	image_set_color_to_coordinates(image_scale, color, int_scale_array, 1);
+	
+	image_t * image_transformed = NULL;
+	image_cat_hor(&image_transformed, image_scale, image_wavelet);
+	image_save_ppm( image_transformed, "transformed.ppm");
+
 
 	image_save_ppm(image, "image.ppm");
 	
