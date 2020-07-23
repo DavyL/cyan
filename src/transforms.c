@@ -159,20 +159,7 @@ complex_cart_t ** middle_band_pass( complex_cart_t ** array_cart, int N, int M){
 	}
 	return ret;
 }
-complex_cart_t ** highpass_harsh(complex_cart_t ** array_cart, int N, int M){
-	int i,j;
-	for(i = 0; i < N; i++){
-		if( i > N/4  && i < 3*N/4){
-			for(j = 0; j < M; j++){	
-				if( j > M/4 && j < 3*M/4 ){	
-					array_cart[i][j].real = 0.0f;
-					array_cart[i][j].im = 0.0f;
-				}
-			}
-		}
-	}
-	return array_cart;
-}
+
 int rotate_180( void *** dst, void ** src, int N, size_t size){
 	int i, j;
 	if(*dst ==NULL){
@@ -327,53 +314,6 @@ int l2_distance(double * dst, double * x, double * y, int len){
 
 }
 
-//convol_loc is going to be deprecated in a few commits
-//Stores in a the convolution of array (of length n) 
-//at step i with a filter h of length filter_len
-int convol_loc( double * a, double * array, double * h, int i, int filter_len, int len, int offset ){
-	if( a == NULL || array == NULL || h == NULL){
-		fprintf(stderr, "ERR : transforms.c : convol_loc() : a NULL pointer was passed as an argument.\n");
-		return -1;
-	}
-	if(i < 0 || i >= len){
-		fprintf(stderr, "ERR : transforms.c : convol_loc() : an out of bound value is passed as an argument for i : %d.\n", i);
-		return -1;
-	}
-	int first_elem = 0;
-	int j = 0;
-	if(filter_len % 2 != 0)
-		filter_len++;
-	
-	if( i - filter_len /2 >= 0){
-		first_elem = i - filter_len / 2;
-	}
-	else{
-		first_elem = 0;
-	}
-
-	for( j = 0, *a = 0.0; j < filter_len; j++){
-		if( first_elem + offset * j < len){
-			*a =*a + (*(array + first_elem + offset*j )) * (h[j]);
-		}
-		else{
-
-			*a =*a + (*(array + first_elem + offset*(filter_len - j) )) * (h[j]);
-			//Out of bounds values are set to 0
-			//Modify here to change boundaries behaviour
-//			fprintf(stdout, "convol_loc() : Adding a zero value.\n");
-		}
-}
-
-	/*for( k = ( 0 > i - filter_len / 2 ? 0 : i - filter_len / 2) ; k < ( (len < i + offset*k + filter_len/2) ? len : i + filter_len/2 + offset*k); j++, k++)
-	  *a += *( array + i + offset*k)*h[j];
-	*/
-//	if(i < 250)
-		//fprintf(stdout, "i : %d : %f\n", i, *a);
-	return 0;
-
-
-}
-
 //Stores in a the convolution of 1D array (of length n) (which is a real value, i.e. a double)
 //at step step with a filter h of length filter_len
 //Warning:  a is not initialized
@@ -435,7 +375,7 @@ int convol_loc_1D_columns( double * a, double * array, double * h, int row, int 
 	}
 		
 	//Ensuring the first element is in range
-	int first_elem = 0;	
+	int first_elem = 0;	//TODO : Add "wrapping" on the first boundary in the 'for' loop 
 	if( row - filter_len /2 >= 0){
 		first_elem = row - filter_len / 2;
 	}

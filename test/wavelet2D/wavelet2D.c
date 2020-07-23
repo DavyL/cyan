@@ -44,38 +44,54 @@ int main( int argc, char** argv, char* envv ) {
 	int scale = 255;
 	double array[len];
 
-	double * sca_sca = NULL;
-	double * wav_sca = NULL;
-	double * sca_wav = NULL;
-	double * wav_wav = NULL;
-
-	D4_wavelet_2D_CR( &sca_sca, &sca_wav, &wav_sca, &wav_wav, image->X, image->rows, image->cols);
-
-	image_t * image_transformed = NULL;
-	save_wavelet_image(&image_transformed, sca_sca, wav_sca, sca_wav, wav_wav, image->rows, image->cols);
-
+	double * sca_sca[3] = {NULL, NULL, NULL};
+	double * wav_sca[3] = {NULL, NULL, NULL};
+	double * sca_wav[3] = {NULL, NULL, NULL};
+	double * wav_wav[3] = {NULL, NULL, NULL};
 	
+	double * tmp_pointer[3];
+	tmp_pointer[0] = image->X;
+	tmp_pointer[1] = image->Y;
+	tmp_pointer[2] = image->Z;
+	for(i = 0; i< 3; i++)
+		D4_wavelet_2D( &sca_sca[i], &sca_wav[i], &wav_sca[i], &wav_wav[i], tmp_pointer[i], image->rows, image->cols);
+
 /*
 	//Non-linear approx
 	double T = 0.2f;
-	double_threshold(scale_array, T, len/2);
-	double_threshold(wavelet_array, T, len/2);
-*/
+	double_threshold(sca_sca, T, image->rows * image->cols /4);
+	double_threshold(sca_wav, T, image->rows * image->cols /4);
+	double_threshold(wav_sca, T, image->rows * image->cols /4);
+	double_threshold(wav_wav, T, image->rows * image->cols /4);
+*/	
+
+	image_t * image_reversed = image_new(image->rows, image->cols);
+	tmp_pointer[0] = image_reversed->X;
+	tmp_pointer[1] = image_reversed->Y;
+	tmp_pointer[2] = image_reversed->Z;
+	
+
+	for(i=0; i < 3; i++)
+		D4_wavelet_2D_backward( &(tmp_pointer[i]), sca_sca[i], sca_wav[i], wav_sca[i], wav_wav[i], image->rows/2, image->cols/2);
+
+	image_t * image_transformed = NULL;
+	save_wavelet_image(&image_transformed, sca_sca[0], wav_sca[0], sca_wav[0], wav_wav[0], image->rows, image->cols);
+
+
 
 	double array_norm = 0.0;
+	double transform_norm = 0.0;
+	double reverse_norm = 0.0;
+	double error_norm = 0.0;
 	l2_distance(&array_norm, image->X, NULL, image->cols * image->rows );
-	fprintf(stdout, " array norm : %f\n", array_norm );
-	double norm[4];
-	l2_distance(norm, sca_sca, NULL, image->cols * image -> rows /4); 
-	l2_distance(norm + 1, sca_wav, NULL, image->cols * image -> rows /4); 
-	l2_distance(norm + 2, wav_sca, NULL, image->cols * image -> rows /4); 
-	l2_distance(norm + 3, wav_wav, NULL, image->cols * image -> rows /4); 
-	
-	fprintf(stdout, "norms : %f\t%f\t%f\t%f\n", norm[0], norm[1], norm[2], norm[3]);	
-	
+	l2_distance(&transform_norm, sca_sca[0], NULL, image->cols * image -> rows /4); 	
+	l2_distance(&reverse_norm, image_reversed->X, NULL, image->cols * image -> rows ); 	
+	l2_distance(&error_norm, image->X, image_reversed->X, image->cols * image -> rows ); 	
+	fprintf(stdout, " array norm : %f\t transformed norm : %f\t reversed array norm : %f\n", array_norm, transform_norm, reverse_norm );
+	fprintf(stdout, "Error between original and reconstructed image : %f\n", (error_norm*error_norm) / (array_norm*array_norm));
 	image_save_ppm(image, "original.ppm");
 	image_save_ppm(image_transformed, "transformed.ppm");	
-
+	image_save_ppm(image_reversed, "reversed.ppm");
 
 
 	return 0;
