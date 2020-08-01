@@ -18,11 +18,11 @@ int D4_wavelet_forward( double ** dst_scale, double ** dst_wavelet, double * src
 		return -1;
 	}
 	if(*dst_scale == NULL){
-		fprintf(stdout, "D4_wavelet_forward() : Allocating memory to dst_scale.\n");
+		//fprintf(stdout, "D4_wavelet_forward() : Allocating memory to dst_scale.\n");
 		*dst_scale = malloc((len/2) * sizeof(double));
 	}
 	if(*dst_wavelet == NULL){
-		fprintf(stdout, "D4_wavelet_forward() : Allocating memory to dst_wavelet.\n");
+		//fprintf(stdout, "D4_wavelet_forward() : Allocating memory to dst_wavelet.\n");
 		*dst_wavelet = malloc((len/2) * sizeof(double));
 	}
 	if(*dst_wavelet == NULL || *dst_scale == NULL){
@@ -63,11 +63,11 @@ int D4_wavelet_columns( double ** dst_scale, double ** dst_wavelet, double * src
 		return -1;
 	}
 	if(*dst_scale == NULL){
-		fprintf(stdout, "D4_wavelet_forward_columns() : Allocating memory to dst_scale.\n");
+		//fprintf(stdout, "D4_wavelet_forward_columns() : Allocating memory to dst_scale.\n");
 		*dst_scale = malloc((len_row/2)* len_col * sizeof(double));
 	}
 	if(*dst_wavelet == NULL){
-		fprintf(stdout, "D4_wavelet_forward_columns() : Allocating memory to dst_wavelet.\n");
+		//fprintf(stdout, "D4_wavelet_forward_columns() : Allocating memory to dst_wavelet.\n");
 		*dst_wavelet = malloc((len_row/2)* len_col * sizeof(double));
 	}
 	if(*dst_wavelet == NULL || *dst_scale == NULL){
@@ -103,23 +103,23 @@ int D4_wavelet_columns( double ** dst_scale, double ** dst_wavelet, double * src
 int D4_wavelet_rows( double ** dst_scale, double ** dst_wavelet, double * src, int len_row, int len_col){
 
 	if(dst_scale == NULL || dst_wavelet == NULL || src == NULL){
-		fprintf(stderr, "Error : D4_wavelet_forward_rows() A NULL argument was passed.\n");
+		fprintf(stderr, "Error : D4_wavelet_rows() A NULL argument was passed.\n");
 		return -1;
 	}
 	if(len_row % 2){
-		fprintf(stderr, "Error : D4_wavelet_forward_rows() len is an odd number.\n");
+		fprintf(stderr, "Error : D4_wavelet_rows() len is an odd number.\n");
 		return -1;
 	}
 	if(*dst_scale == NULL){
-		fprintf(stdout, "D4_wavelet_forward_rows() : Allocating memory to dst_scale.\n");
+		//fprintf(stdout, "D4_wavelet_rows() : Allocating memory to dst_scale.\n");
 		*dst_scale = malloc((len_row/2)* len_col * sizeof(double));
 	}
 	if(*dst_wavelet == NULL){
-		fprintf(stdout, "D4_wavelet_forward_rows() : Allocating memory to dst_wavelet.\n");
+		//fprintf(stdout, "D4_wavelet_rows() : Allocating memory to dst_wavelet.\n");
 		*dst_wavelet = malloc((len_row/2)* len_col * sizeof(double));
 	}
 	if(*dst_wavelet == NULL || *dst_scale == NULL){
-		fprintf(stderr, "Error: D4_wavelet_forward_rows() Error allocating dst pointers.\n");
+		fprintf(stderr, "Error: D4_wavelet_rows() Error allocating dst pointers.\n");
 		return -1;
 	}
 
@@ -152,7 +152,7 @@ int D4_wavelet_rows( double ** dst_scale, double ** dst_wavelet, double * src, i
 int D4_wavelet_2D( double ** sca_sca, double ** sca_wav, double ** wav_sca, double ** wav_wav, double * array, int len_row, int len_col){
 
 
-	
+	fprintf(stdout, "Computing Daubechies 4 bi-dimensional wavelet transform...\n");	
 	double * hor_scale = NULL;
 	double * hor_wavelet = NULL;
 
@@ -160,6 +160,8 @@ int D4_wavelet_2D( double ** sca_sca, double ** sca_wav, double ** wav_sca, doub
 	D4_wavelet_columns( sca_sca, sca_wav, hor_scale, len_row, len_col/2);
 	D4_wavelet_columns( wav_sca, wav_wav, hor_wavelet, len_row, len_col/2);
 
+	//free(hor_scale);
+	//free(hor_wavelet);
 
 	return 0;
 }
@@ -167,6 +169,7 @@ int D4_wavelet_2D( double ** sca_sca, double ** sca_wav, double ** wav_sca, doub
 //Same as D4_wavelet_2D but performs Columns first, then Rows
 int D4_wavelet_2D_CR( double ** sca_sca, double ** sca_wav, double ** wav_sca, double ** wav_wav, double * array, int len_row, int len_col){
 	
+	fprintf(stdout, "Computing Daubechies 4 bi-dimensional wavelet transform (On columns then on rows)...\n");	
 	double * ver_scale = NULL;
 	double * ver_wavelet = NULL;
 
@@ -319,6 +322,7 @@ int D4_wavelet_backward_columns( double ** dst, double * src_scale, double * src
 int D4_wavelet_2D_backward( double ** dst, double * sca_sca, double * sca_wav, double * wav_sca, double * wav_wav, int len_row, int len_col){
 
 
+	fprintf(stdout, "Computing Daubechies 4 bi-dimensional backward wavelet transform...\n");	
 	
 	double * hor_scale = NULL;
 	double * hor_wavelet = NULL;
@@ -333,6 +337,7 @@ int D4_wavelet_2D_backward( double ** dst, double * sca_sca, double * sca_wav, d
 int D4_wavelet_2D_backward_CR( double ** dst, double * sca_sca, double * sca_wav, double * wav_sca, double * wav_wav, int len_row, int len_col){
 
 
+	fprintf(stdout, "Computing Daubechies 4 bi-dimensional backward wavelet transform (on columns then on rows)...\n");	
 	
 	double * ver_scale = NULL;
 	double * ver_wavelet = NULL;
@@ -379,5 +384,87 @@ int compute_dual_filter(double ** filter_dst, double * filter_src, int filter_le
 	return 0;
 	
 }
+
+int D4_wavelet_2D_convol( double ** sca_sca, double ** sca_wav, double ** wav_sca, double ** wav_wav, double * array, int len_row, int len_col){
+	
+	fprintf(stdout, "Computing Daubechies 4 bi-dimensional wavelet transform through convolution...\n");
+	
+	if( sca_sca == NULL || sca_wav == NULL || wav_sca == NULL || wav_wav == NULL || array == NULL ){
+		fprintf(stderr, "ERR : D4_wavelet_2D_convol() : One of the arguments is a NULL pointer.\n");	
+		return -1;
+	}
+	
+	//Loading Daubechies4 low pass filter (scaling function)
+	const int filter_length = 4;
+	double h[] = { 0.482962913f, 0.836516303f, 0.224143868f, -0.129409522f}; 
+	
+	//Loading the associated high pass filter (wavelet function)
+	//TODO : implement general computation of g from h
+	double g[] = { -0.12940952f, -0.22414387f, 0.8365163f, -0.48296291f};
+	
+	double * tensor_hh = NULL;
+	double * tensor_hg = NULL;
+	double * tensor_gh = NULL;
+	double * tensor_gg = NULL;
+	tensor_double( &tensor_hh, h, filter_length, h, filter_length);
+	tensor_double( &tensor_hg, h, filter_length, g, filter_length);
+	tensor_double( &tensor_gh, g, filter_length, h, filter_length);
+	tensor_double( &tensor_gg, g, filter_length, g, filter_length);
+
+	//*_os are oversampled wavelets
+	double * sca_sca_os = NULL;
+	double * sca_wav_os = NULL;
+	double * wav_sca_os = NULL;
+	double * wav_wav_os = NULL;
+
+	convol_2D( &sca_sca_os, array, len_row, len_col, tensor_hh, filter_length, filter_length);
+	convol_2D( &sca_wav_os, array, len_row, len_col, tensor_hg, filter_length, filter_length);
+	convol_2D( &wav_sca_os, array, len_row, len_col, tensor_gh, filter_length, filter_length);
+	convol_2D( &wav_wav_os, array, len_row, len_col, tensor_gg, filter_length, filter_length);
+
+	
+	fprintf(stdout, "D4_wavelet_2D_convol() : Downsampling coefficients...\n");
+	wavelet_2D_sampling(sca_sca, sca_sca_os, len_row, len_col);
+	wavelet_2D_sampling(sca_wav, sca_wav_os, len_row, len_col);
+	wavelet_2D_sampling(wav_sca, wav_sca_os, len_row, len_col);
+	wavelet_2D_sampling(wav_wav, wav_wav_os, len_row, len_col);
+/*
+	free(sca_sca_os);
+	free(wav_sca_os);
+	free(sca_wav_os);
+	free(wav_wav_os);
+*/
+	fprintf(stdout, "D4_wavelet_2D_convol() : Coefficients have been successfully computed.\n");
+	return 0;
+}
+
+int wavelet_2D_sampling(double ** dst, double * src, int src_rows, int src_cols){
+	if(dst == NULL || src == NULL){
+		fprintf(stderr, "ERR : wavelet.c : wavelet_2D_sampling() : One of the arguments is a NULL pointer.\n");
+		return -1;
+	}
+	if(src_rows % 2 || src_cols %2){
+		fprintf(stderr, "WARNING : wavelet.c : wavelet_2D_sampling() : At least one of the arguments is odd. Behaviour is undefined.\n");
+	}
+	if(*dst == NULL){
+		*dst = malloc((src_rows * src_cols / 4) * sizeof(double));
+		if(*dst == NULL){
+			fprintf(stderr, "ERR : wavelet.c : wavelet_2D_sampling() : Memory allocation failed.\n");
+			return -1;
+		}
+	}
+
+	int i = 0;
+	int j = 0;
+	for(i =0; i < src_rows/2; i++){
+		for(j = 0; j < src_cols /2; j++){
+			(*dst)[i *( src_cols /2) + j] = src[ 2 * i *src_cols + 2 * j];
+		}
+	}
+
+	return 0;
+}
+
+
 
 

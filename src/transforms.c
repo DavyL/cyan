@@ -322,8 +322,8 @@ int convol_loc_1D( double * a, double * array, double * h, int step, int filter_
 		fprintf(stderr, "ERR : transforms.c : convol_loc_1D() : a NULL pointer was passed as an argument.\n");
 		return -1;
 	}
-	if(step < 0 || step >= len){
-		fprintf(stderr, "ERR : transforms.c : convol_loc_1D() : an out of bound value is passed as an argument for i : %d.\n", step);
+	if(step < - filter_len/2 || step >= len){
+		fprintf(stderr, "ERR : transforms.c : convol_loc_1D() : an out of bound value is passed as an argument for step : %d.\n", step);
 		return -1;
 	}
 
@@ -341,11 +341,12 @@ int convol_loc_1D( double * a, double * array, double * h, int step, int filter_
 	
 	int j = 0;
 	for( j = 0; j < filter_len; j++){
-		if( first_elem + j < len){
+		if(first_elem + j < 0){
+			*a += array[ - first_elem - j] * h[j];
+		}else if( first_elem + j < len){
 			//*a =*a + (*(array + first_elem + j )) * (h[j]);
 			*a += array[ first_elem + j] * (h[j]);
-		}
-		else{
+		}else{
 
 			*a =*a + (*(array + first_elem + filter_len - j )) * (h[j]);	
 			//Making symmetry on the boundary
@@ -396,5 +397,102 @@ int convol_loc_1D_columns( double * a, double * array, double * h, int row, int 
 	
 	return 0;
 }
+
+//Performs full 2D convolution of an array
+int convol_2D( double ** dst, double * array, int array_rows, int array_cols, double * matrix, int matrix_rows, int matrix_cols){
+	if(dst == NULL || array == NULL || matrix == NULL){
+		fprintf(stderr, "ERR : transforms.c : convol_2D() : One of the arguments is a NULL pointer.\n");
+		return -1;
+	}
+	if( array_rows <= 0 || array_cols <= 0 ){
+		fprintf(stderr, "ERR : transforms.c : convol_2D() : Array rows or cols is a negative number.\n");
+		return -1;
+	}
+	if( matrix_rows <= 0 || matrix_cols <= 0 ){
+		fprintf(stderr, "ERR : transforms.c : convol_2D() : Matrix rows or cols is a negative number.\n");
+		return -1;
+	}
+
+	if(*dst == NULL){
+		*dst = calloc(array_rows * array_cols,  sizeof(double));
+		if(*dst == NULL){
+			fprintf(stderr, "ERR : transforms.c : convol_2D() : Memory allocation of dst failed.\n");
+			return -1;
+		}
+	}
+
+	int i = 0;
+	int j = 0;
+	for( i = 0; i < array_rows; i++){
+		for( j = 0; j < array_cols; j++){
+			if(convol_2D_loc( &((*dst)[i * array_cols + j]), array, i, j, array_rows, array_cols, matrix, matrix_rows, matrix_cols) == -1){
+				fprintf(stderr, "ERR : transforms.c : convol_2D() : Something went wrong at step (i,j) : (%d, %d).\n", i, j);
+				return -1;
+			}
+		}
+	}
+	
+	return 0;
+}
+
+//Computes matrix convolution on a local support
+int convol_2D_loc( double * dst, double * array, int first_row, int first_col, int array_rows, int array_cols, double * matrix, int matrix_rows, int matrix_cols){
+	if(dst == NULL){
+		fprintf(stderr, "ERR : transforms.c : convol_2D_loc() : dst is a NULL pointer. It should be the address of a double variable.\n");
+		return -1;
+	}
+	
+	if( array == NULL || matrix == NULL){
+		fprintf(stderr, "ERR : transforms.c : convol_2D_loc() : One of the arguments is a NULL pointer.\n");
+		return -1;
+	}
+	if( array_rows <= 0 || array_cols <= 0 ){
+		fprintf(stderr, "ERR : transforms.c : convol_2D_loc() : Array rows or cols is a negative number.\n");
+		return -1;
+	}
+	if( matrix_rows <= 0 || matrix_cols <= 0 ){
+		fprintf(stderr, "ERR : transforms.c : convol_2D_loc() : Matrix rows or cols is a negative number.\n");
+		return -1;
+	}
+
+	int i = 0;
+	int first_step = first_row - matrix_rows /2;
+	for( i = 0; i < matrix_rows; i++){
+		if(first_step + i < 0){
+			convol_loc_1D(dst, array - (first_step + i) * array_cols, matrix + i * matrix_cols, first_col, matrix_cols, array_cols);
+		}else if(first_step + i >= array_rows){
+			convol_loc_1D(dst, array + (array_rows - i) * array_cols, matrix + i * matrix_cols, first_col, matrix_cols, array_cols);
+		}else{
+			convol_loc_1D(dst, array + (first_step + i) * array_cols, matrix + i * matrix_cols, first_col, matrix_cols, array_cols);
+		}
+
+	}
+	
+	return 0;
+}
+
+//Stores tensor product of h and g (two vectors)
+int tensor_double( double ** dst, double * h, int h_len, double * g, int g_len){
+	if(dst == NULL || h == NULL){
+		fprintf(stderr, "ERR : transforms.c : tensor_double() : One of the arguments is a NULL pointer.\n");
+		return -1;
+	}
+	if(*dst == NULL){
+		*dst = malloc( h_len * g_len * sizeof(double));
+		if(*dst == NULL){
+			fprintf(stderr, "ERR : transforms.c : tensor_double() : Memory allocation failed.\n");
+		}
+	}
+	int i = 0;
+	int j = 0;
+	for(i = 0; i < h_len; i++){
+		for(j=0; j < g_len; j++){
+			(*dst)[ i*h_len + j ] = h[i] * g[j];
+		}
+	}
+	return 0;
+
+}
+
 
 

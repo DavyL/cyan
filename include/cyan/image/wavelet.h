@@ -19,4 +19,8 @@ int D4_wavelet_2D_backward( double ** dst, double * sca_sca, double * sca_wav, d
 int D4_wavelet_2D_backward_CR( double ** dst, double * sca_sca, double * sca_wav, double * wav_sca, double * wav_wav, int len_row, int len_col);
 
 int compute_dual_filter(double ** filter_dst, double * filter_src, int filter_length);
+int D4_wavelet_2D_convol( double ** sca_sca, double ** sca_wav, double ** wav_sca, double ** wav_wav, double * array, int len_row, int len_col);
+
+int wavelet_2D_sampling(double ** dst, double * src, int src_rows, int src_cols);
+
 #endif

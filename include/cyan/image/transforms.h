@@ -41,5 +41,9 @@ int l2_distance(double * dst, double * x, double * y, int len);
 int convol_loc_1D( double * a, double * array, double * h, int i, int filter_len, int len);
 int convol_loc_1D_columns( double * a, double * array, double * h, int row, int column, int filter_len, int len_row, int len_col);
 
+int convol_2D( double ** dst, double * array, int array_rows, int array_cols, double * matrix, int matrix_rows, int matrix_cols);
+int convol_2D_loc( double * dst, double * array, int first_row, int first_col, int array_rows, int array_cols, double * matrix, int matrix_rows, int matrix_cols);
+int tensor_double( double ** dst, double * h, int h_len, double * g, int g_len);
+
 
 #endif

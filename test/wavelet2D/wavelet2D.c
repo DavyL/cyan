@@ -21,7 +21,6 @@ int transform_2_dim_backward( double ** dst1, double * src1, double * src2, doub
 int save_wavelet_image(image_t ** dst, 	double * sca_sca, double * wav_sca, double * sca_wav, double * wav_wav, int rows, int cols);
 
 int main( int argc, char** argv, char* envv ) {
-	image_t * image = NULL ;	
 	
 	if (argc != 2 ) {
 		fprintf(stderr,"Usage : %s file.png\n", argv[0] ) ;
@@ -34,20 +33,15 @@ int main( int argc, char** argv, char* envv ) {
 		fprintf(stderr, "Couldn't open file.\n Error : %d, (%s)\n", errno, strerror(errno));
 		return -1;
 	}
+	image_t * image = NULL ;	
 	image = png2image(fp);
 
-	int len = image->cols;
-	int height = image->rows;
-	int offset = 1;
 	int i = 0;
-	int j = 0;
-	int scale = 255;
-	double array[len];
 
-	double * sca_sca[3] = {NULL, NULL, NULL};
-	double * wav_sca[3] = {NULL, NULL, NULL};
-	double * sca_wav[3] = {NULL, NULL, NULL};
-	double * wav_wav[3] = {NULL, NULL, NULL};
+	double * sca_sca[4] = {NULL, NULL, NULL, NULL};
+	double * wav_sca[4] = {NULL, NULL, NULL, NULL};
+	double * sca_wav[4] = {NULL, NULL, NULL, NULL};
+	double * wav_wav[4] = {NULL, NULL, NULL, NULL};
 	
 	double * tmp_pointer[3];
 	tmp_pointer[0] = image->X;
@@ -56,6 +50,11 @@ int main( int argc, char** argv, char* envv ) {
 	for(i = 0; i< 3; i++)
 		D4_wavelet_2D( &sca_sca[i], &sca_wav[i], &wav_sca[i], &wav_wav[i], tmp_pointer[i], image->rows, image->cols);
 
+	D4_wavelet_2D_convol( &sca_sca[3], &sca_wav[3], &wav_sca[3], &wav_wav[3], image->X, image->rows, image->cols);
+	
+	image_t * image_reversed_convol = image_new(image->rows, image->cols);
+	D4_wavelet_2D_backward( &image_reversed_convol->X, sca_sca[3], sca_wav[3], wav_sca[3], wav_wav[3], image->rows/2, image->cols/2);	
+	
 /*
 	//Non-linear approx
 	double T = 0.2f;
@@ -75,24 +74,32 @@ int main( int argc, char** argv, char* envv ) {
 		D4_wavelet_2D_backward( &(tmp_pointer[i]), sca_sca[i], sca_wav[i], wav_sca[i], wav_wav[i], image->rows/2, image->cols/2);
 
 	image_t * image_transformed = NULL;
+	image_t * image_transformed_convol = NULL;
 	save_wavelet_image(&image_transformed, sca_sca[0], wav_sca[0], sca_wav[0], wav_wav[0], image->rows, image->cols);
-
-
+	save_wavelet_image(&image_transformed_convol, sca_sca[3], wav_sca[3], sca_wav[3], wav_wav[3], image->rows, image->cols);
 
 	double array_norm = 0.0;
 	double transform_norm = 0.0;
 	double reverse_norm = 0.0;
 	double error_norm = 0.0;
+	double error_norm_convol = 0.0;
+
 	l2_distance(&array_norm, image->X, NULL, image->cols * image->rows );
 	l2_distance(&transform_norm, sca_sca[0], NULL, image->cols * image -> rows /4); 	
 	l2_distance(&reverse_norm, image_reversed->X, NULL, image->cols * image -> rows ); 	
 	l2_distance(&error_norm, image->X, image_reversed->X, image->cols * image -> rows ); 	
-	fprintf(stdout, " array norm : %f\t transformed norm : %f\t reversed array norm : %f\n", array_norm, transform_norm, reverse_norm );
+	l2_distance(&error_norm_convol, image->X, image_reversed_convol->X, image->cols * image -> rows ); 
+
+	fprintf(stdout, " Parseval : array norm : %f\t transformed norm : %f\t reversed array norm : %f\n", array_norm, transform_norm, reverse_norm );
+
 	fprintf(stdout, "Error between original and reconstructed image : %f\n", (error_norm*error_norm) / (array_norm*array_norm));
+	fprintf(stdout, "Convolution error between original and reconstructed image : %f\n", (error_norm_convol*error_norm_convol) / (array_norm*array_norm));
+
 	image_save_ppm(image, "original.ppm");
 	image_save_ppm(image_transformed, "transformed.ppm");	
+	image_save_ppm(image_transformed_convol, "convol_transformed.ppm");	
 	image_save_ppm(image_reversed, "reversed.ppm");
-
+	image_save_ppm(image_reversed_convol, "convol_reversed.ppm");
 
 	return 0;
 }
@@ -108,14 +115,14 @@ int save_wavelet_image(image_t ** dst, 	double * sca_sca, double * wav_sca, doub
 	image_t * image_wav_sca = image_new(rows/2, cols/2);
 	image_wav_sca->X = wav_sca;
 	image_t * image_scale = NULL;
-	image_cat_hor(&image_scale, image_wav_sca, image_sca_sca);
+	image_cat_hor(&image_scale, image_sca_sca, image_wav_sca);
 	
 	image_t * image_wav_wav = image_new(rows/2, cols/2);
 	image_wav_wav->X = wav_wav;
 	image_t * image_sca_wav = image_new(rows/2, cols/2);
 	image_sca_wav->X = sca_wav;
 	image_t * image_wavelet = NULL;	
-	image_cat_hor(&image_wavelet, image_wav_wav, image_sca_wav);
+	image_cat_hor(&image_wavelet, image_sca_wav, image_wav_wav);
 
 	image_cat_ver(dst, image_scale, image_wavelet);
 /*	Freeing the images also frees the wavelet input
@@ -139,6 +146,8 @@ int save_wavelet_image(image_t ** dst, 	double * sca_sca, double * wav_sca, doub
 //4 : phi_y_phi_x 
 //psi: lowpass
 //phi: highpass (details)
+
+//Following functions should (could) work but are not in use and are not tested 
 int transform_2_dim( double ** dst1, double ** dst2, double **dst3, double ** dst4, double * src, int src_len, int src_height, int (*transform)(double **, double **, double *, int , int)){
 
 	int i = 0;
