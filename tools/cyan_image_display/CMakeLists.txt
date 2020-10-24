@@ -49,11 +49,6 @@ add_executable( "cyan_image_display" ${src} ${hdr} )
 
 ### Linking
 
-
-target_link_libraries( "cyan_imageviewer" "m" )
-target_link_libraries( "cyan_imageviewer" ${PNG_LIBRARIES} )
-target_link_libraries( "cyan_imageviewer" "cyan" )
-
 target_link_libraries( "cyan_image_display" "m" )
 target_link_libraries( "cyan_image_display" "cyan" )
 
