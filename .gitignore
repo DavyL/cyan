@@ -13,4 +13,4 @@ CMakeFile
 *.cmake
 
 build/*
-include/cyan/cyan_config.h
+include/cyan/common/config.h

@@ -139,7 +139,7 @@ void RGB_to_XYZ(
             break;
         case CYAN_RGB_NTSC:
             // Gamma : 2.2
-            // Ref White: E
+            // Ref White: C
             // Adaptation Method : Bradford
             r = pow( R, 2.2 ) ;
             g = pow( G, 2.2 ) ;

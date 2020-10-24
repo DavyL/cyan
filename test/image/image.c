@@ -6,6 +6,7 @@ int main( int argc, char** argv, char* envv ) {
 
     int i,j,k ;
     image_t* image ; 
+
    
     for (k=0;k<1000;k++) {
         image = image_new(1280, 1024) ;
@@ -24,6 +25,6 @@ int main( int argc, char** argv, char* envv ) {
         }
         image_free( image) ;
     }
-    return 0 ;
+   return 0 ;
 }
 

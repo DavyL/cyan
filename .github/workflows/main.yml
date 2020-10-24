@@ -1,0 +1,59 @@
+name: cyan
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Install SSH key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SSH_PRIVATEKEY }}
+        name: id_rsa # optional
+        known_hosts: ${{ secrets.SSH_KNOWNHOSTS }}
+      
+    - name: Install Dependencies
+      run: sudo apt-get install gettext
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{runner.workspace}}/build
+
+    - name: Configure CMake
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      shell: bash
+      run: cmake --build . --config $BUILD_TYPE
+
+    - name: Test
+      working-directory: ${{runner.workspace}}/build
+      shell: bash
+      run: ctest -C $BUILD_TYPE
+    
+    - name: Generate Package
+      working-directory: ${{runner.workspace}}/build
+      shell: bash
+      run: sudo cpack -G DEB
+
+    - name: Sending Package over ssh
+      working-directory: ${{runner.workspace}}/build
+      shell: bash
+      run: for file in cyan*.deb ; do scp "$file" ${{secrets.SSH_USER}}@${{secrets.SSH_HOST}}:./cyan.deb ; done
